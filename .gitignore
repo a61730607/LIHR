@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 .vscode
 __pycache__/
 *.py[co]
@@ -9,6 +8,4 @@ pretrained_models
 scripts/
 detail-api/
 data/list
-=======
 *.pyc
->>>>>>> b73e43aad4a66185a48b27d18d0458c0435e35b2
