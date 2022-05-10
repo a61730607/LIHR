@@ -90,7 +90,7 @@ class CrossEntropy(nn.Module):
         return loss
 
     def forward(self, score, target):
-
+        loss_cls = None
         if config.MODEL.NUM_OUTPUTS == 1:
             score = [score]
         if config.MODEL.NUM_OUTPUTS == 3:
@@ -101,8 +101,11 @@ class CrossEntropy(nn.Module):
         weights = config.LOSS.BALANCE_WEIGHTS
         assert len(weights) == len(score)
         loss_seg = sum([w * self._forward(x, target) for (w, x) in zip(weights, score)])
-        
-        return loss_seg + loss_cls
+        if loss_cls:
+            all_loss = loss_seg
+        else:
+            all_loss = loss_seg + loss_cls
+        return all_loss
 
 
 class OhemCrossEntropy(nn.Module):
