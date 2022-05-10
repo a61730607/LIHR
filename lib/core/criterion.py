@@ -101,7 +101,7 @@ class CrossEntropy(nn.Module):
         weights = config.LOSS.BALANCE_WEIGHTS
         assert len(weights) == len(score)
         loss_seg = sum([w * self._forward(x, target) for (w, x) in zip(weights, score)])
-        if loss_cls:
+        if loss_cls == None:
             all_loss = loss_seg
         else:
             all_loss = loss_seg + loss_cls
