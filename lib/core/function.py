@@ -105,6 +105,7 @@ def validate(config, testloader, model, writer_dict):
             losses, pred = model(image, label)
             if not isinstance(pred, (list, tuple)):
                 pred = [pred]
+            if len(pred) > 2 : pred = pred[:2]
             for i, x in enumerate(pred):
                 x = F.interpolate(
                     input=x, size=size[-2:],
@@ -133,7 +134,7 @@ def validate(config, testloader, model, writer_dict):
         confusion_matrix = torch.from_numpy(confusion_matrix).cuda()
         reduced_confusion_matrix = reduce_tensor(confusion_matrix)
         confusion_matrix = reduced_confusion_matrix.cpu().numpy()
-
+    if nums == 3 : nums =2
     for i in range(nums):
         pos = confusion_matrix[..., i].sum(1)
         res = confusion_matrix[..., i].sum(0)
@@ -176,42 +177,6 @@ def testval(config, test_dataset, testloader, model,
                     pred, size[-2:],
                     mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS
                 )
-            # cut image to k_h * k_w parts
-            # k_h = 16
-            # k_w = 16
-            # for r in range(k_h):
-            #     for c in range(k_w):
-            #         # if c !=15 or r != 15:
-            #         #     continue
-            #         # print(size[-2] // k_h, size[-1] // k_w)
-            #         child_label = label[:,c * size[-2] // k_h: (c+1) * size[-2] // k_h, r * size[-1] // k_w :(r+1) * size[-1] // k_w]
-            #         # print(child_label.size())
-            #         child_pred = pred[:,:, c * size[-2] // k_h: (c+1) * size[-2] // k_h, r * size[-1] // k_w :(r+1) * size[-1] // k_w]
-            #         # print(child_pred.size())
-            #         child_confusion_matrix=get_confusion_matrix(
-            #             child_label,
-            #             child_pred,
-            #             child_label.size(),
-            #             config.DATASET.NUM_CLASSES,
-            #             config.TRAIN.IGNORE_LABEL
-            #         )
-            #         # print(child_confusion_matrix)
-            #         child_pos = child_confusion_matrix.sum(1)
-            #         child_res = child_confusion_matrix.sum(0)
-            #         child_tp = np.diag(child_confusion_matrix)
-            #         # print(child_pos, child_res, child_tp)
-                    
-            #         child_pixel_acc = child_tp.sum()/child_pos.sum()
-            #         if child_pos.sum() == 0:
-            #             child_pixel_acc = 1.0
-            #         # print('child_pixel_acc', child_pixel_acc)
-            #         child_mean_acc = (child_tp/np.maximum(1.0, child_pos)).mean()
-            #         child_IoU_array = (child_tp / np.maximum(1.0, child_pos + child_res - child_tp))
-            #         child_mean_IoU = child_IoU_array.mean()
-            #         print('pos', r, c, 'child_mean_IoU=', child_mean_IoU)
-            #         print('child_pixel_acc', r, c, 'child_pixel_acc=', child_pixel_acc)
-            #         # break
-            #     # break
 
             confusion_matrix += get_confusion_matrix(
                 label,

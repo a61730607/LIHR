@@ -16,12 +16,13 @@ from utils.utils import get_confusion_matrix
 
 
 def get_region_cls_gt(gt_size, prob, label):
-    gt = torch.ones((2 ,gt_size[2], gt_size[3]))  #  2 * 32 * 64
+    # print(gt_size)
+    gt = torch.ones((gt_size[0] ,gt_size[2], gt_size[3]))  #  2 * 32 * 64
     pred  = prob
     size = label.size()
     k_h = 32
     k_w = 64
-    for n in range(2):
+    for n in range(gt_size[0]):
         for r in range(k_h):
             for c in range(k_w):
                 child_label = label[n,c * size[-2] // k_h: (c+1) * size[-2] // k_h, r * size[-1] // k_w :(r+1) * size[-1] // k_w].unsqueeze(0)
