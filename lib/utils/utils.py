@@ -108,25 +108,18 @@ def get_confusion_matrix(label, pred, size, num_class, ignore=-1):
     """
     Calcute the confusion matrix by given label and pred
     """
-    output = pred.cpu().numpy().transpose(0, 2, 3, 1)
+    output = pred.cpu().detach().numpy().transpose(0, 2, 3, 1)  ##  TODO
     seg_pred = np.asarray(np.argmax(output, axis=3), dtype=np.uint8)
     seg_gt = np.asarray(
     label.cpu().numpy()[:, :size[-2], :size[-1]], dtype=np.int)
-    print(seg_gt,seg_gt.shape)
-    print(ignore)
-    print(seg_pred, seg_pred.shape)
+
     ignore_index = seg_gt != ignore
-    # print(ignore_index)
     seg_gt = seg_gt[ignore_index]
     seg_pred = seg_pred[ignore_index]
 
-    # print('seg_gt', seg_gt)
-    # print('seg_pred', seg_pred)
-
     index = (seg_gt * num_class + seg_pred).astype('int32')
-    # print(index)
     label_count = np.bincount(index)
-    # print(label_count)
+    
     confusion_matrix = np.zeros((num_class, num_class))
 
     for i_label in range(num_class):

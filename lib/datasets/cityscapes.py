@@ -197,14 +197,6 @@ class Cityscapes(BaseDataset):
     def save_pred(self, preds, sv_path, name):
         palette = self.get_palette(256)
 
-        gt = cv2.imread('data/cityscapes/gtFine/val/frankfurt/' + name[0].replace('_leftImg8bit', '_gtFine_labelIds') + '.png', cv2.IMREAD_GRAYSCALE)
-        gt = np.asarray(gt,dtype=np.uint8)
-        # gt = self.convert_label(gt, inverse=True)
-        gt = Image.fromarray(gt)
-        gt.putpalette(palette)
-        gt.save(os.path.join(sv_path, name[0]+'_gt.png'))
-        print(preds.size())
-
         preds = np.asarray(np.argmax(preds.cpu(), axis=1), dtype=np.uint8)
         
         for i in range(preds.shape[0]):

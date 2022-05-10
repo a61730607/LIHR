@@ -10,7 +10,48 @@ from torch.nn import functional as F
 import logging
 from config import config
 
+import numpy as np
+from utils.utils import get_confusion_matrix
 
+
+
+def get_region_cls_gt(gt_size, prob, label):
+    gt = torch.ones((2 ,gt_size[2], gt_size[3]))  #  2 * 32 * 64
+    pred  = prob
+    size = label.size()
+    k_h = 32
+    k_w = 64
+    for n in range(2):
+        for r in range(k_h):
+            for c in range(k_w):
+                child_label = label[n,c * size[-2] // k_h: (c+1) * size[-2] // k_h, r * size[-1] // k_w :(r+1) * size[-1] // k_w].unsqueeze(0)
+                child_pred = pred[n,:, c * size[-2] // k_h: (c+1) * size[-2] // k_h, r * size[-1] // k_w :(r+1) * size[-1] // k_w].unsqueeze(0)
+                child_confusion_matrix=get_confusion_matrix(
+                    child_label,
+                    child_pred,
+                    child_label.size(),
+                    config.DATASET.NUM_CLASSES,
+                    config.TRAIN.IGNORE_LABEL
+                )
+                # print(child_confusion_matrix)
+                child_pos = child_confusion_matrix.sum(1)
+                child_res = child_confusion_matrix.sum(0)
+                child_tp = np.diag(child_confusion_matrix)
+                # print(child_pos, child_res, child_tp)
+                
+                child_pixel_acc = child_tp.sum()/child_pos.sum()
+                if child_pos.sum() == 0:
+                    child_pixel_acc = 1.0
+                # print('child_pixel_acc', child_pixel_acc)
+                child_mean_acc = (child_tp/ np.maximum(1.0, child_pos)).mean()
+                child_IoU_array = (child_tp / np.maximum(1.0, child_pos + child_res - child_tp))
+                child_mean_IoU = child_IoU_array.mean()
+                if child_mean_acc >= 0.95:
+                    gt[n, r, c] = 1
+                else:
+                    gt[n, r, c] = 0
+    return gt
+    
 class CrossEntropy(nn.Module):
     def __init__(self, ignore_label=-1, weight=None):
         super(CrossEntropy, self).__init__()
@@ -19,6 +60,23 @@ class CrossEntropy(nn.Module):
             weight=weight,
             ignore_index=ignore_label
         )
+        self.loss_fn = nn.CrossEntropyLoss()
+
+    def region_cls_loss(self, feat, score, target):
+        # feat  N * 2 * 32 * 64
+        ph, pw = score.size(2), score.size(3)
+        h, w = target.size(1), target.size(2)
+        if ph != h or pw != w:
+            score = F.interpolate(input=score, size=(
+                h, w), mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS)
+        # gt = torch.ones((2 ,feat.size(2), feat.size(3))).long().cuda(score.device)
+        gt_size = feat.size()
+        gt = get_region_cls_gt(gt_size, score, target)
+    
+        gt = gt.long().cuda(score.device)
+        
+        loss = self.loss_fn(feat,gt)
+        return loss
 
     def _forward(self, score, target):
         ph, pw = score.size(2), score.size(3)
@@ -26,7 +84,6 @@ class CrossEntropy(nn.Module):
         if ph != h or pw != w:
             score = F.interpolate(input=score, size=(
                 h, w), mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS)
-
         loss = self.criterion(score, target)
 
         return loss
@@ -35,11 +92,18 @@ class CrossEntropy(nn.Module):
 
         if config.MODEL.NUM_OUTPUTS == 1:
             score = [score]
-
+        if config.MODEL.NUM_OUTPUTS == 3:
+            feat = score[2]
+            score = score[:2]
+        # print("loss_cls\n\n\n\n")
+        loss_cls = self.region_cls_loss(feat, score[0], target)
+        # print("loss_cls\n\n\n\n", loss_cls)
         weights = config.LOSS.BALANCE_WEIGHTS
         assert len(weights) == len(score)
-
-        return sum([w * self._forward(x, target) for (w, x) in zip(weights, score)])
+        loss_seg = sum([w * self._forward(x, target) for (w, x) in zip(weights, score)])
+        # print("loss_seg")
+        # print(loss_seg)
+        return loss_seg + loss_cls
 
 
 class OhemCrossEntropy(nn.Module):

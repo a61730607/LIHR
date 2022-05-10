@@ -1,0 +1,13 @@
+参考文献：
+https://github.com/xdeng7/NightLab
+https://arxiv.org/abs/2204.05538
+受 nightLab 的思路启发， 做一个Zoom-In 的网络， 能够更加关注困难样本
+
+
+选用Cityscape 作为实验数据集， backbone 使用  HRnet+OCR+segfix   
+https://github.com/HRNet/HRNet-Semantic-Segmentation
+
+
+
+
+首先复现baseline 
