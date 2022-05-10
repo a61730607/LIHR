@@ -96,14 +96,12 @@ class CrossEntropy(nn.Module):
         if config.MODEL.NUM_OUTPUTS == 3:
             feat = score[2]
             score = score[:2]
-        # print("loss_cls\n\n\n\n")
-        loss_cls = self.region_cls_loss(feat, score[0], target)
-        # print("loss_cls\n\n\n\n", loss_cls)
+            loss_cls = self.region_cls_loss(feat, score[0], target)
+        
         weights = config.LOSS.BALANCE_WEIGHTS
         assert len(weights) == len(score)
         loss_seg = sum([w * self._forward(x, target) for (w, x) in zip(weights, score)])
-        # print("loss_seg")
-        # print(loss_seg)
+        
         return loss_seg + loss_cls
 
 
