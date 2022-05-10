@@ -1,3 +1,3 @@
-CUDA_VISIBLE_DEVICES=4,5,6,7 python -m torch.distributed.launch --nproc_per_node=4 tools/train.py --cfg cfgs/cityscape/LIHR/seg_hrnet_ocr_region_cls_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_16_epoch484
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 tools/train.py --cfg cfgs/cityscape/LIHR/seg_hrnet_ocr_region_cls_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_16_epoch484
 
 # python tools/test.py --cfg cfgs/cityscape/LIHR/seg_hrnet_ocr_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_16_epoch484.yaml TEST.MODEL_FILE output/cityscapes/seg_hrnet_ocr_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_16_epoch484/best.pth DATASET.TEST_SET list/cityscapes/mini_val.lst
